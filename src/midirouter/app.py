@@ -18,12 +18,12 @@ class RouterApplication:
     async def run(self, options=None):
 
         self.in_device = BaseDevice(
-            in_port_patterns=options.in_port,
+            in_port_pattern=options.in_port,
             required=True
         )
 
         self.out_device = BaseDevice(
-            out_port_patterns=options.out_port,
+            out_port_pattern=options.out_port,
             channel=options.out_channel,
             required=True
         )
