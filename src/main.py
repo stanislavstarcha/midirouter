@@ -18,7 +18,6 @@ if __name__ == '__main__':
 
     parser.add_argument(
         '--out_channel',
-        default=15,
         type=int,
         help='Midi output channel (0 to 15)')
 
