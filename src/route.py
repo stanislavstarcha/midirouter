@@ -3,7 +3,7 @@ import logging
 
 import asyncio
 
-from midirouter.app import RouterApplication
+from midirouter.router import RouterApplication
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,17 +13,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        '--in_port',
-        help='Midi input device port')
-
-    parser.add_argument(
-        '--out_channel',
-        type=int,
-        help='Midi output channel (0 to 15)')
-
-    parser.add_argument(
-        '--out_port',
-        help='Midi output port')
+        '--config',
+        help='Router config')
 
     parser.add_argument(
         '--list_ports',

@@ -1,0 +1,65 @@
+{
+    "name": "n.minor",
+    "tempo": 170,
+    "template": {
+        "pad": {
+            "type": "note",
+            "note": 0,
+            "channel": 16,
+            "aftertouch": "channel",
+            "trigger": "momentary",
+            "program": 0,
+            "msb": 0,
+            "lsb": 0
+
+        },
+        "dial": {
+            "type": "cc",
+            "channel": 15,
+            "midicc": 0,
+            "min": 0,
+            "max": 127,
+            "msb": 0,
+            "lsb": 0,
+            "value": 0
+        }
+    },
+    "scales": [
+        {
+            "bank": "a",
+            "pad": 1,
+            "root": "C1",
+            "type": "natural minor"
+        },
+        {
+            "bank": "a",
+            "pad": 9,
+            "root": "C2",
+            "type": "natural minor"
+        },
+        {
+            "bank": "b",
+            "pad": 1,
+            "root": "C3",
+            "type": "natural minor"
+        },
+        {
+            "bank": "b",
+            "pad": 9,
+            "root": "C4",
+            "type": "natural minor"
+        },
+        {
+            "bank": "c",
+            "pad": 1,
+            "root": "C5",
+            "type": "natural minor"
+        },
+        {
+            "bank": "c",
+            "pad": 9,
+            "root": "C6",
+            "type": "natural minor"
+        }
+    ]
+}

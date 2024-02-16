@@ -1,0 +1,64 @@
+{
+    "template": {
+        "pad": {
+            "type": "note",
+            "note": 1,
+            "channel": 11,
+            "aftertouch": "off",
+            "trigger": "momentary"
+        },
+        "dial": {
+            "type": "cc",
+            "channel": 11,
+            "cc": 1,
+            "min": 0,
+            "max": 127
+        }
+
+    },
+    "channel": 10,
+    "banks": {
+        "a": {
+            "dials": {
+                "1": {
+                    "type": "aftertouch",
+                    "min": 0,
+                    "max": 127
+                },
+                "2": {
+                    "type": "incdec1",
+                    "value": 0,
+                    "msb": 1,
+                    "lsb": 1
+                },
+                "3": {
+                    "type": "incdec2",
+                    "cc": 0
+                }
+            },
+
+            "pads": {
+                "1": {
+                    "type": "note",
+                    "aftertouch": "channel",
+                    "trigger": "momentary"
+                },
+                "2": {
+                    "type": "note",
+                    "aftertouch": "poly",
+                    "trigger": "toggle"
+                },
+                "3": {
+                    "type": "program",
+                    "program": 10
+                },
+                "4": {
+                    "type": "bank",
+                    "program": 10,
+                    "msb": 1,
+                    "lsb": 2
+                }
+            }
+        }
+    }
+}

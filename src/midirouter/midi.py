@@ -49,7 +49,8 @@ class MidiIn:
             self._port = mido.open_input(port_name)
             logger.info("MIDI IN port %s opened", port_name)
 
-    def get_port_names(self):
+    @staticmethod
+    def get_port_names():
         return mido.get_input_names()
 
     def set_callback(self, callback):
@@ -90,7 +91,8 @@ class MidiOut:
             message.channel = self._channel
         self._port.send(message)
 
-    def get_port_names(self):
+    @staticmethod
+    def get_port_names():
         return mido.get_output_names()
 
     def clock(self):

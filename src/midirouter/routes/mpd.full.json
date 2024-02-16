@@ -1,0 +1,10 @@
+{
+    "mpd": {
+        "in": "MPD",
+        "out": [
+            "Rytm",
+            "Digitakt",
+            "USB2MIDI"
+        ]
+    }
+}
