@@ -45,6 +45,7 @@ class RouterApplication:
         await Event().wait()
 
     def route(self, router, message):
-        logger.info(message)
+        if message.type != "clock":
+            logger.info(message)
         for out_device in self.routers[router]["out"]:
             out_device.send(message)
