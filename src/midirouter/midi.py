@@ -79,7 +79,7 @@ class MidiOut:
             time.sleep(5)
 
         if port_name:
-            self._port = mido.open_output(port_name)
+            self._port = mido.open_output(port_name, autoreset=True)
             logger.info("MIDI OUT port %s opened", port_name)
 
     def send(self, message):
@@ -89,7 +89,7 @@ class MidiOut:
 
         if self._channel:
             message.channel = self._channel
-        self._port.send(message)
+        return self._port.send(message)
 
     @staticmethod
     def get_port_names():

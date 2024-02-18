@@ -1,0 +1,8 @@
+{
+    "mpd": {
+        "in": "MPD",
+        "out": [
+            "Digitakt"
+        ]
+    }
+}
