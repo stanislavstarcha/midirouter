@@ -3,7 +3,7 @@ import logging
 
 import asyncio
 
-from midirouter.mpd import MPDApplication
+from mpd import MPDApplication
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s (%(levelname)s) %(name)s: %(message)s"

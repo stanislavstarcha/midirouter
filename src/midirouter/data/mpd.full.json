@@ -1,0 +1,21 @@
+{
+    "router": "base",
+    "in": {
+        "name": "general",
+        "pattern": "MPD"
+    },
+    "out": [
+        {
+            "name": "general",
+            "pattern": "Rytm"
+        },
+        {
+            "name": "general",
+            "pattern": "Digitakt"
+        },
+        {
+            "name": "general",
+            "pattern": "USB2MIDI"
+        }
+    ]
+}
