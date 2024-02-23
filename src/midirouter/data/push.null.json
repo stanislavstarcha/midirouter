@@ -1,5 +1,6 @@
 {
-    "push2": {
+    "push2listener": {
+        "router": "push2",
         "in": {
             "name": "push2"
         },

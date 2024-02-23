@@ -1,5 +1,6 @@
 {
     "push2octa": {
+        "router": "push2",
         "in": {
             "name": "push2"
         },
@@ -12,6 +13,7 @@
         ]
     },
     "mpd2rytm": {
+        "router": "base",
         "in": {
             "name": "general",
             "pattern": "MPD"

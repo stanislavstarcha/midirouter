@@ -64,7 +64,9 @@ class RouterApplication:
             ]
 
             router = self.create_router(
-                name=router_name, in_device=in_device, out_devices=out_devices
+                name=route_conf.get("router"),
+                in_device=in_device,
+                out_devices=out_devices,
             )
             await router.run()
 
