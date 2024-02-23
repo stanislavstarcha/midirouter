@@ -23,11 +23,11 @@ class RouterApplication:
 
     routers = None
 
-    def create_device(self, name, pattern):
+    def create_device(self, name, pattern, channel):
         device_class = {"general": GeneralMidiDevice, "push2": Push2Device}.get(
             name, GeneralMidiDevice
         )
-        return device_class(pattern=pattern)
+        return device_class(pattern=pattern, channel=channel)
 
     def create_router(self, name, in_device, out_devices):
         router_class = {"base": BaseRouter, "push2": Push2Router}.get(name, BaseRouter)
@@ -47,15 +47,26 @@ class RouterApplication:
         with open(config_file) as f:
             config = json.loads(f.read())
 
-        in_device = self.create_device(config["in"].pop("name"), config.get("pattern"))
+        for router_name, route_conf in config.items():
+            in_device = self.create_device(
+                name=route_conf["in"].get("name"),
+                pattern=route_conf["in"].get("pattern"),
+                channel=None,
+            )
 
-        out_devices = [
-            self.create_device(device_conf.pop("name"), device_conf.get("pattern"))
-            for device_conf in config["out"]
-        ]
+            out_devices = [
+                self.create_device(
+                    name=device_conf.pop("name"),
+                    pattern=device_conf.get("pattern"),
+                    channel=device_conf.get("channel"),
+                )
+                for device_conf in route_conf["out"]
+            ]
 
-        router = self.create_router(config["router"], in_device, out_devices)
-        await router.run()
+            router = self.create_router(
+                name=router_name, in_device=in_device, out_devices=out_devices
+            )
+            await router.run()
 
 
 if __name__ == "__main__":

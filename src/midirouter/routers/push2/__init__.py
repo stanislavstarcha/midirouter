@@ -45,16 +45,15 @@ class Push2Router(BaseRouter):
             frame = self._display_page.build()
             self._display.show(frame)
 
-    def on_midi_out(self, message, notes):
-        logger.info(f"{message.type} {notes}")
+    def on_midi_out(self, msg_type, velocity, notes, channel=None):
+        logger.info(f"{msg_type} {notes}")
         for out_device in self._out_devices:
             for note in notes:
                 out_device.send(
                     mido.Message(
-                        type=message.type,
-                        channel=message.channel,
+                        type=msg_type,
+                        channel=out_device.channel or channel,
                         note=note,
-                        velocity=message.velocity,
-                        time=message.time,
+                        velocity=velocity,
                     )
                 )

@@ -1,0 +1,26 @@
+{
+    "push2octa": {
+        "in": {
+            "name": "push2"
+        },
+        "out": [
+            {
+                "name": "general",
+                "pattern": "USB2MIDI",
+                "channel": 15
+            }
+        ]
+    },
+    "mpd2rytm": {
+        "in": {
+            "name": "general",
+            "pattern": "MPD"
+        },
+        "out": [
+            {
+                "name": "general",
+                "pattern": "Rytm"
+            }
+        ]
+    }
+}

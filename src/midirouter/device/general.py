@@ -26,9 +26,13 @@ class GeneralMidiDevice:
 
     _callbacks = None
 
-    def __init__(self, pattern=None):
+    # Midi out channel to send messages to
+    channel = None
+
+    def __init__(self, pattern=None, channel=None):
         self._pattern = pattern
         self._callbacks = []
+        self.channel = channel
         self.connect()
         self.on_ready()
 

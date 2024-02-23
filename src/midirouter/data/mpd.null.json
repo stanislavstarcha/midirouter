@@ -1,8 +1,9 @@
 {
-    "router": "base",
-    "in": {
-        "name": "general",
-        "pattern": "MPD"
-    },
-    "out": []
+    "mpd": {
+        "in": {
+            "name": "general",
+            "pattern": "MPD"
+        },
+        "out": []
+    }
 }

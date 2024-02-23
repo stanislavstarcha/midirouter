@@ -1,7 +1,8 @@
 {
-    "router": "push2",
-    "in": {
-        "name": "push2"
-    },
-    "out": []
+    "push2": {
+        "in": {
+            "name": "push2"
+        },
+        "out": []
+    }
 }

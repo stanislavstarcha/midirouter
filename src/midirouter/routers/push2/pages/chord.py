@@ -1,8 +1,12 @@
+import logging
+
 import cairo
 from music_essentials import Note, Scale
 
 from midirouter.device.push2 import Push2Colors
 from midirouter.routers.push2.pages import Push2Page
+
+logger = logging.getLogger(__name__)
 
 
 class Push2ChordPage(Push2Page):
@@ -51,7 +55,8 @@ class Push2ChordPage(Push2Page):
         "inv": 1,
     }
 
-    modifiers = [False] * 16
+    _modifiers = [False] * 16
+    _prev_modifiers = [False] * 16
 
     # current scale index
     _scale_index: int = None
@@ -69,7 +74,8 @@ class Push2ChordPage(Push2Page):
     _chord_modifier_b = ""
 
     # current notes pressed
-    _notes_on = set()
+    _notes_pressed = set()
+    _notes_playing = set()
 
     _modifier_name: str = ""
 
@@ -92,18 +98,13 @@ class Push2ChordPage(Push2Page):
         for pad, name in self.MODIFIERS.items():
             self._device.highlight_pad(pad, self.MODIFIER_COLORS[name])
 
-    def modify(self, note_index):
-
+    def build_chord(self, note_index, modifiers):
         self._chord_type = ""
         self._chord_modifier_a = ""
         self._chord_modifier_b = ""
 
         names = set(
-            [
-                self.MODIFIERS[idx + 84]
-                for idx, state in enumerate(self.modifiers)
-                if state
-            ]
+            [self.MODIFIERS[idx + 84] for idx, state in enumerate(modifiers) if state]
         )
 
         if not names:
@@ -214,50 +215,89 @@ class Push2ChordPage(Push2Page):
 
     def on_chord_modifier_message(self, message):
         index = message.note - 84
+
+        pad_color = Push2Colors.BLUE
         if message.type == "note_on":
-            self.modifiers[index] = True
-            self._device.highlight_pad(message.note, Push2Colors.BLUE)
+            self._modifiers[index] = True
 
         if message.type == "note_off":
-            self.modifiers[index] = False
-            self._device.highlight_pad(
-                message.note, self.MODIFIER_COLORS[self.MODIFIERS[message.note]]
+            self._modifiers[index] = False
+            pad_color = self.MODIFIER_COLORS[self.MODIFIERS[message.note]]
+
+        to_play = set()
+        to_stop = set()
+
+        for note_index in self._notes_pressed:
+            last_chord = self.build_chord(note_index, self._prev_modifiers)
+            to_stop.update(set(last_chord) - {self._scale_notes[note_index]})
+
+            chord = self.build_chord(note_index, self._modifiers)
+            to_play.update(set(chord) - {self._scale_notes[note_index]})
+
+        to_stop -= to_play
+        to_play -= self._notes_playing
+
+        if to_stop:
+            self._notes_playing -= to_stop
+            self._on_midi_out(
+                msg_type="note_off",
+                velocity=message.velocity,
+                notes=to_stop,
+                channel=message.channel,
             )
+
+        if to_play:
+            self._notes_playing.update(to_play)
+            self._on_midi_out(
+                msg_type="note_on",
+                velocity=message.velocity,
+                notes=to_play,
+                channel=message.channel,
+            )
+
+        self._prev_modifiers = list(self._modifiers)
+        self._device.highlight_pad(message.note, pad_color)
 
     def on_note_message(self, message):
 
         row = (message.note - 36) // 8
         col = (message.note - 36) % 8
         note_index = self._scale_size * row + col
+        chord = self.build_chord(note_index, self._modifiers)
 
+        pad_color = Push2Colors.GREEN
         if message.type == "note_on":
-            self._device.highlight_pad(message.note, Push2Colors.GREEN)
-            self._notes_on.add(str(Note.from_midi_num(self._scale_notes[note_index])))
-            notes = self.modify(note_index)
-            self._on_midi_out(message, notes)
+            self._notes_pressed.add(note_index)
+            self._notes_playing.update(set(chord))
 
         if message.type == "note_off":
-            self._device.highlight_pad(
-                message.note, self.get_pad_default_color(message.note)
-            )
-            self._notes_on.remove(
-                str(Note.from_midi_num(self._scale_notes[note_index]))
-            )
-            notes = self.modify(note_index)
-            self._on_midi_out(message, notes)
+            pad_color = self.get_pad_default_color(message.note)
+            self._notes_pressed.remove(note_index)
+            self._notes_playing -= set(chord)
+
+        self._device.highlight_pad(message.note, pad_color)
+        self._on_midi_out(
+            msg_type=message.type,
+            velocity=message.velocity,
+            notes=chord,
+            channel=message.channel,
+        )
 
     def on_message(self, message):
-        # control message
-        if message.type == "control_change" and message.value == 127:
-            if 20 <= message.control <= 27:
-                self.on_scale_message(message)
+        try:
+            # control message
+            if message.type == "control_change" and message.value == 127:
+                if 20 <= message.control <= 27:
+                    self.on_scale_message(message)
 
-        if message.type in ["note_on", "note_off"]:
-            if 84 <= message.note <= 99:
-                self.on_chord_modifier_message(message)
+            if message.type in ["note_on", "note_off"]:
+                if 84 <= message.note <= 99:
+                    self.on_chord_modifier_message(message)
 
-            if 36 <= message.note <= 83:
-                self.on_note_message(message)
+                if 36 <= message.note <= 83:
+                    self.on_note_message(message)
+        except Exception as e:
+            logger.exception(e)
 
     def get_pad_default_color(self, note):
         color = Push2Colors.DARK_GRAY
@@ -279,8 +319,9 @@ class Push2ChordPage(Push2Page):
 
         ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
 
-        if self._notes_on:
-            for idx, note in enumerate(self._notes_on.copy()):
+        if self._notes_pressed:
+            for idx, note_index in enumerate(self._notes_pressed.copy()):
+                note = str(Note.from_midi_num(self._scale_notes[note_index]))
                 ctx.set_font_size(font_size)
                 ctx.move_to(10 + idx * 200, font_size * 2)
                 ctx.show_text(
