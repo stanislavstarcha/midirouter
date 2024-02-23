@@ -48,6 +48,7 @@ class RouterApplication:
             config = json.loads(f.read())
 
         in_device = self.create_device(config["in"].pop("name"), config.get("pattern"))
+
         out_devices = [
             self.create_device(device_conf.pop("name"), device_conf.get("pattern"))
             for device_conf in config["out"]

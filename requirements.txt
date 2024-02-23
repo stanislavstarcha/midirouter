@@ -1,4 +1,7 @@
 construct==2.10.70
 mido==1.3.2
 python-rtmidi==1.5.8
+pyusb==1.2.1
+numpy==1.26.4
 music_essentials @ git+https://github.com/charlottepierce/music_essentials@097a2bb14373662fcb0f6b585abca2913a8affb0
+pycairo==1.26.0
