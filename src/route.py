@@ -47,6 +47,7 @@ class RouterApplication:
         with open(config_file) as f:
             config = json.loads(f.read())
 
+        router_futures = []
         for router_name, route_conf in config.items():
             in_device = self.create_device(
                 name=route_conf["in"].get("name"),
@@ -68,7 +69,9 @@ class RouterApplication:
                 in_device=in_device,
                 out_devices=out_devices,
             )
-            await router.run()
+            router_futures.append(router.run())
+
+        await asyncio.gather(*router_futures)
 
 
 if __name__ == "__main__":
