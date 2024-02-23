@@ -15,7 +15,7 @@ class BaseRouter:
         self._out_devices = out_devices
 
     async def run(self):
-        self._in_device.set_callback(self.on_message)
+        self._in_device.add_callback(self.on_message)
         await self.wait()
 
     async def wait(self):

@@ -1,6 +1,8 @@
 # run midirouter on raspeberry
 
 ```
+sudo apt-get install libopenblas-dev
+
 cd /opt
 sudo git clone https://github.com/stanislavstarcha/midirouter.git
 cd midirouter
