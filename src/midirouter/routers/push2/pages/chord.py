@@ -55,8 +55,12 @@ class Push2ChordPage(Push2Page):
         "inv": 1,
     }
 
+    _octave = 1
     _modifiers = [False] * 16
     _prev_modifiers = [False] * 16
+
+    # when true modifiers work in a toggle mode
+    _latch_mode = False
 
     # current scale index
     _scale_index: int = None
@@ -66,6 +70,10 @@ class Push2ChordPage(Push2Page):
     _scale_size: int = 7
     # current scale notes
     _scale_notes: list = None
+    # current scale root note
+    _scale_root_note: str = "C"
+    # current scale key notes
+    _scale_key_notes: list = []
 
     # current chord state
     _chord_notes = ""
@@ -81,10 +89,15 @@ class Push2ChordPage(Push2Page):
 
     def initialize(self):
         self._device.add_callback(self.on_message)
+        self.initialize_controls()
         self.initialize_scales()
         self.initialize_pads()
         self.initialize_modifiers()
         self.set_scale(20)
+
+    def initialize_controls(self):
+        self._device.highlight_control(54)
+        self._device.highlight_control(55)
 
     def initialize_scales(self):
         for cc, name in self.SCALES.items():
@@ -112,6 +125,7 @@ class Push2ChordPage(Push2Page):
 
         # major chord
         names.add("triad")
+        self._chord_type = "maj"
         chord = [
             self._scale_notes[note_index],
             self._scale_notes[note_index + 2],
@@ -202,9 +216,17 @@ class Push2ChordPage(Push2Page):
         self._scale_notes = []
         self._scale_size = len(Scale._SCALE_PATTERNS[self._scale_name])
 
+        scale = Scale.build_scale(
+            Note.from_note_string(f"{self._scale_root_note}0"),
+            self._scale_name,
+        )
+
+        self._scale_key_notes = [str(note) for note in scale][: self._scale_size]
+
         for octave in range(-1, 9):
             scale = Scale.build_scale(
-                Note.from_note_string(f"C{octave}"), self._scale_name
+                Note.from_note_string(f"{self._scale_root_note}{octave}"),
+                self._scale_name,
             )
             for idx in range(self._scale_size):
                 self._scale_notes.append(scale[idx].midi_note_number())
@@ -213,16 +235,36 @@ class Push2ChordPage(Push2Page):
         self._scale_index = message.control
         self.set_scale(self._scale_index)
 
+    def on_octave_message(self, message):
+
+        if message.control == 54 and self._octave > -1:
+            self._octave -= 1
+
+        if message.control == 55 and self._octave < 2:
+            self._octave += 1
+
     def on_chord_modifier_message(self, message):
+        self._chord_type = ""
+        self._chord_modifier_a = ""
+        self._chord_modifier_b = ""
+
         index = message.note - 84
 
-        pad_color = Push2Colors.BLUE
-        if message.type == "note_on":
-            self._modifiers[index] = True
+        pad_color = self.MODIFIER_COLORS[self.MODIFIERS[message.note]]
 
-        if message.type == "note_off":
-            self._modifiers[index] = False
-            pad_color = self.MODIFIER_COLORS[self.MODIFIERS[message.note]]
+        if self._latch_mode:
+            if message.type == "note_on":
+                self._modifiers[index] = not self._modifiers[index]
+            if self._modifiers[index]:
+                pad_color = Push2Colors.BLUE
+
+        else:
+            if message.type == "note_on":
+                self._modifiers[index] = True
+                pad_color = Push2Colors.BLUE
+
+            if message.type == "note_off":
+                self._modifiers[index] = False
 
         to_play = set()
         to_stop = set()
@@ -260,8 +302,12 @@ class Push2ChordPage(Push2Page):
 
     def on_note_message(self, message):
 
-        row = (message.note - 36) // 8
-        col = (message.note - 36) % 8
+        base = 36
+        octave_diff = self._octave - (-1)
+        pad_note = message.note + octave_diff * 8
+
+        row = (pad_note - base) // 8
+        col = (pad_note - base) % 8
         note_index = self._scale_size * row + col
         chord = self.build_chord(note_index, self._modifiers)
 
@@ -271,7 +317,7 @@ class Push2ChordPage(Push2Page):
             self._notes_playing.update(set(chord))
 
         if message.type == "note_off":
-            pad_color = self.get_pad_default_color(message.note)
+            pad_color = self.get_pad_default_color(pad_note)
             self._notes_pressed.remove(note_index)
             self._notes_playing -= set(chord)
 
@@ -283,12 +329,24 @@ class Push2ChordPage(Push2Page):
             channel=message.channel,
         )
 
+    def on_latch_mode_message(self, message):
+        self._latch_mode = not self._latch_mode
+        control_color = Push2Colors.WHITE if self._latch_mode else Push2Colors.BLACK
+        self._device.highlight_control(48, control_color)
+
     def on_message(self, message):
         try:
             # control message
             if message.type == "control_change" and message.value == 127:
+
+                if message.control == 48:
+                    self.on_latch_mode_message(message)
+
                 if 20 <= message.control <= 27:
                     self.on_scale_message(message)
+
+                if 54 <= message.control <= 55:
+                    self.on_octave_message(message)
 
             if message.type in ["note_on", "note_off"]:
                 if 84 <= message.note <= 99:
@@ -319,17 +377,28 @@ class Push2ChordPage(Push2Page):
 
         ctx.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
 
-        if self._notes_pressed:
-            for idx, note_index in enumerate(self._notes_pressed.copy()):
-                note = str(Note.from_midi_num(self._scale_notes[note_index]))
-                ctx.set_font_size(font_size)
-                ctx.move_to(10 + idx * 200, font_size * 2)
-                ctx.show_text(
-                    note
-                    + self._chord_modifier_a
-                    + self._chord_modifier_b
-                    + self._chord_type
-                )
+        ctx.move_to(10, 30)
+        ctx.set_font_size(20)
+        ctx.show_text(
+            self._chord_modifier_a + self._chord_modifier_b + self._chord_type
+        )
+
+        for idx, midi_note in enumerate(sorted(self._notes_playing)):
+            ctx.set_font_size(40)
+            ctx.move_to(10 + idx * 100, 100)
+            note = Note.from_midi_num(midi_note)
+            accidental = note.accidental if note.accidental else ""
+            note_str = note.pitch + accidental
+            ctx.show_text(note_str)
+
+            ctx.set_font_size(10)
+            ctx.move_to(15 + 25 * len(note_str) + idx * 100, 80)
+            ctx.show_text(str(note.octave))
+
+        # if self._notes_pressed:
+        #     for idx, note_index in enumerate(self._notes_pressed.copy()):
+        #         note = str(Note.from_midi_num(self._scale_notes[note_index]))
+        #         ctx.move_to(10 + idx * 200, font_size * 2)
 
         ctx.set_font_size(14)
         for scale_index, scale_name in self.SCALES.items():

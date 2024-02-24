@@ -18,7 +18,7 @@ After=multi-user.target
 
 [Service]
 Type=idle
-ExecStart=/usr/bin/python /opt/midirouter/src/route.py --config=mpd.full.json
+ExecStart=/usr/bin/python /opt/midirouter/src/route.py --config=full.json
 
 [Install]
 WantedBy=multi-user.target
